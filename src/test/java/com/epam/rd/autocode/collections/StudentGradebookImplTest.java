@@ -16,6 +16,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -74,14 +75,14 @@ class StudentGradebookImplTest {
 	}
 
 	@Test
-	void sizeShoulBeEqualed6() {
+	void sizeShouldBeEqualed6() {
 		int expected = 6;
 		int actual = gbook.size();
 		assertEquals(expected, actual);
 	}
 
 	@Test
-	void getAndSortAllStudentsShoulReturnMapWithCorrectContent() {
+	void getAndSortAllStudentsShouldReturnMapWithCorrectContent() {
 		Map<BigDecimal, List<Student>> map = gbook.getAndSortAllStudents();
 		
 		List<Student> expected;
@@ -101,7 +102,7 @@ class StudentGradebookImplTest {
 	}
 
 	@Test
-	void getComparatorShoulReturnCorrectComparator() {
+	void getComparatorShouldReturnCorrectComparator() {
 		Comparator<Student> comp = gbook.getComparator();
 
 		assertThrows(RuntimeException.class, () -> comp.compare(S1, null));
@@ -113,6 +114,12 @@ class StudentGradebookImplTest {
 		
 		assertTrue(comp.compare(s1, s2) == 0);
 		assertTrue(Math.signum(comp.compare(s1, s3)) == Math.signum(comp.compare(s1, s3)));
+	}
+
+	@Test
+	void removeStudentsByGradeShouldReturnMapWithCorrectComparator() {
+		TreeMap map = (TreeMap)gbook.removeStudentsByGrade(BigDecimal.valueOf(5.0));
+		assertEquals(gbook.getComparator(), map.comparator());
 	}
 
 	@Test
@@ -152,7 +159,7 @@ class StudentGradebookImplTest {
 	}
 	
 	@Test
-	void complianceTestLambdaExpressionsAreRestrictedForUsing() {
+	void appShoulNotUseLambdaExpressions() {
 		Stream.of(StudentGradebookImpl.class)
 			.map(Class::getDeclaredMethods)
 			.flatMap(Stream::of)
@@ -166,7 +173,7 @@ class StudentGradebookImplTest {
 	}
 	
 	@Test
-	void appShouldUseOnlyOptionalFromJavaUtilPackage() {
+	void appShouldNotUseJavaUtilStream() {
 		SpoonAPI spoon = new Launcher();
 		spoon.addInputResource("src/main/java/");
 		spoon.buildModel();
