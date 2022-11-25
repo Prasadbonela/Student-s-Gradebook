@@ -1,4 +1,4 @@
-# Student Gradebook
+# Student’s Gradebook
 
 The purpose of this exercise is to work with Comparator implementations on the TreeMap maps.  
 
@@ -22,9 +22,10 @@ Now, please proceed to the `StudentsGradebookImpl` class, which implements the `
 * `List<String> getStudentsByDiscipline(String discipline)`  
    Gets a list of strings with students' names and their grades for the specified disciplines in the format `"first_last name : grade"`
 * `Map<Student, Map<String, BigDecimal>> removeStudentsByGrade(BigDecimal grade)`  
-   Finds, removes, and returns from the gradebook students who have a grade below the specified one in any discipline. If no such students are found, an empty map will be returned.
+   Finds, removes, and returns from the gradebook students who have a grade below the specified one in any discipline  
+   If no such students are found, an empty map will be returned
 * `Map<BigDecimal, List<Student>> getAndSortAllStudents()`  
-   Gets the gradebook as an ordered map where the key is the average grade and the value is a list of the `Student` type.
+   Gets the gradebook as an ordered map where the key is the average grade and the value is a list of the `Student` type
 
 ### Details
 
