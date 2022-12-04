@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +28,52 @@ import spoon.SpoonAPI;
 import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.filter.TypeFilter;
 
+/**
+ * @author D. Kolesnikov
+ */
 class StudentGradebookImplTest { 
+	
+	//////////////////////////////////////////////////////////////////////////////
+
+	private static boolean isAllTestsMustFailed;
+
+	private static Throwable complianceTestFailedCause;
+
+	static {
+		try {
+			String testClassName = new Exception().getStackTrace()[0].getClassName();
+			String className = testClassName.substring(0, testClassName.lastIndexOf("Test"));
+			Class<?> c = Class.forName(className);
+
+			java.lang.reflect.Method[] methods = { 
+					c.getDeclaredMethod("addEntryOfStudent", Student.class, String.class, BigDecimal.class),
+					c.getDeclaredMethod("size"),
+					c.getDeclaredMethod("getStudentsByDiscipline", String.class),
+					c.getDeclaredMethod("getComparator"),
+					c.getDeclaredMethod("removeStudentsByGrade", BigDecimal.class),
+					c.getDeclaredMethod("getAndSortAllStudents")
+				};
+
+			org.apache.bcel.classfile.JavaClass jc = org.apache.bcel.Repository.lookupClass(c);
+			for (java.lang.reflect.Method method : methods) {
+				org.apache.bcel.classfile.Method m = jc.getMethod(method);
+				org.apache.bcel.classfile.Code code = m.getCode();
+				Assertions.assertTrue(code.getCode().length > 2, () -> m + " is not a stub");
+			}
+		} catch (Throwable t) {
+			isAllTestsMustFailed = true;
+			complianceTestFailedCause = t;
+			t.printStackTrace();
+		}
+	}
+
+	{
+		if (isAllTestsMustFailed) {
+			Assertions.fail(() -> "Compliance test failed: " + complianceTestFailedCause.getMessage());
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////////
 
 	private StudentGradebook gbook;
 	
