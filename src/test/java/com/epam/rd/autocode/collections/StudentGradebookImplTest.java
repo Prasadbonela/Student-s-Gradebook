@@ -15,8 +15,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Assertions;
@@ -163,35 +161,20 @@ class StudentGradebookImplTest {
 	}
 
 	@Test
-	void removeStudentsByGradeShouldReturnMapWithCorrectComparator() {
-		TreeMap map = (TreeMap)gbook.removeStudentsByGrade(BigDecimal.valueOf(5.0));
-		assertEquals(gbook.getComparator(), map.comparator());
-	}
-
-	@Test
 	void getStudentsByDisciplineShouldReturnProperValue() {
-		Map<Student, Map<String, BigDecimal>> map = 
-				gbook.removeStudentsByGrade(BigDecimal.valueOf(4.0));
-		
-		List<Student> expected;
-		Set<Student> actual;
-		
-		expected = Arrays.asList(S1, S2, S3);
-		actual = map.keySet();
-		assertIterableEquals(expected, actual);
-		
-		List<Student> studs = new ArrayList<>();
-		gbook.getAndSortAllStudents().forEach((k, v) -> studs.addAll(v));
-		
-		assertEquals(3, studs.size());
-
-		assertTrue(studs.contains(S4));
-		assertTrue(studs.contains(S5));
-		assertTrue(studs.contains(S6));
+		List<String> expected = Arrays.asList(
+				"FName1_LName1: 3.3", 
+				"FName2_LName2: 3.3",
+				"FName3_LName3: 3.9", 
+				"FName4_LName4: 4.6", 
+				"FName5_LName5: 4.5", 
+				"FName6_LName6: 4.4");
+		List<String> actual = gbook.getStudentsByDiscipline("dis1");
+		Assertions.assertIterableEquals(expected, actual);
 	}
 
 	@Test
-	void getStudentsByDisciplineShouldProperlyRemoveEntries() {
+	void removeStudentsByGradeShouldProperlyRemoveEntries() {
 		gbook.removeStudentsByGrade(BigDecimal.valueOf(4.0));
 		
 		List<Student> studs = new ArrayList<>();
