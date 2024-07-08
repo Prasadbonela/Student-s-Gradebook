@@ -2,28 +2,52 @@ package com.epam.rd.autocode.collections;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.function.Function;
 
 public class StudentGradebookImpl implements StudentGradebook {
+
 	private final Map<Student, Map<String, BigDecimal>> map;
 	private final Comparator<Student> studentComparator;
 
 	public StudentGradebookImpl() {
-		this.map = new TreeMap<>(Comparator.comparing(Student::getLastName)
-				.thenComparing(Student::getFirstName)
-				.thenComparing(Student::getGroup));
-		this.studentComparator = Comparator.comparing(Student::getLastName)
-				.thenComparing(Student::getFirstName)
-				.thenComparing(Student::getGroup);
+		studentComparator = new Comparator<Student>() {
+			@Override
+			public int compare(Student s1, Student s2) {
+				int result = s1.getLastName().compareTo(s2.getLastName());
+				if (result == 0) {
+					result = s1.getFirstName().compareTo(s2.getFirstName());
+				}
+				if (result == 0) {
+					result = s1.getGroup().compareTo(s2.getGroup());
+				}
+				return result;
+			}
+		};
+		map = new TreeMap<>(studentComparator);
 	}
 
 	@Override
 	public boolean addEntryOfStudent(Student student, String discipline, BigDecimal grade) {
-		if (grade == null || grade.compareTo(BigDecimal.ZERO) < 0 || grade.compareTo(new BigDecimal("5.0")) > 0) {
-			throw new IllegalArgumentException("Grade must be between 0 and 5 inclusive");
+		for (Student student1 : map.keySet()) {
+			for (Map<String, BigDecimal> value : map.values()) {
+				for (String dis : value.keySet()) {
+					if (student1.equals(student) && dis.equals(discipline)) return false;
+					break;
+				}
+				break;
+			}
+			break;
 		}
+		map.computeIfAbsent(student, new Function<Student, Map<String, BigDecimal>>() {
+			@Override
+			public Map<String, BigDecimal> apply(Student k) {
+				return new HashMap<>();
+			}
 
-		map.putIfAbsent(student, new HashMap<>());
-		return map.get(student).put(discipline, grade) == null;
+		}).put(discipline, grade);
+
+		return true;
+
 	}
 
 	@Override
@@ -39,33 +63,39 @@ public class StudentGradebookImpl implements StudentGradebook {
 	@Override
 	public List<String> getStudentsByDiscipline(String discipline) {
 		List<String> result = new ArrayList<>();
+
 		for (Map.Entry<Student, Map<String, BigDecimal>> entry : map.entrySet()) {
-			BigDecimal grade = entry.getValue().get(discipline);
+			Student student = entry.getKey();
+			Map<String, BigDecimal> grades = entry.getValue();
+			BigDecimal grade = grades.get(discipline);
+
 			if (grade != null) {
-				result.add(entry.getKey().getFirstName() + "_" + entry.getKey().getLastName() + ": " + grade);
+				result.add(student.getFirstName() + "_" + student.getLastName() + " : " + grade);
 			}
 		}
+
 		return result;
 	}
-
-
-
 
 	@Override
 	public Map<Student, Map<String, BigDecimal>> removeStudentsByGrade(BigDecimal grade) {
 		Map<Student, Map<String, BigDecimal>> removedStudents = new TreeMap<>(studentComparator);
 
 		Iterator<Map.Entry<Student, Map<String, BigDecimal>>> iterator = map.entrySet().iterator();
+
 		while (iterator.hasNext()) {
 			Map.Entry<Student, Map<String, BigDecimal>> entry = iterator.next();
-			boolean shouldRemove = false;
-			for (Map.Entry<String, BigDecimal> grades : entry.getValue().entrySet()) {
-				if (grades.getValue().compareTo(grade) < 0) {
-					shouldRemove = true;
+			Map<String, BigDecimal> grades = entry.getValue();
+
+			boolean belowGrade = false;
+			for (BigDecimal g : grades.values()) {
+				if (g.compareTo(grade) < 0) {
+					belowGrade = true;
 					break;
 				}
 			}
-			if (shouldRemove) {
+
+			if (belowGrade) {
 				removedStudents.put(entry.getKey(), entry.getValue());
 				iterator.remove();
 			}
@@ -76,30 +106,27 @@ public class StudentGradebookImpl implements StudentGradebook {
 
 	@Override
 	public Map<BigDecimal, List<Student>> getAndSortAllStudents() {
-		Map<BigDecimal, List<Student>> sortedStudents = new TreeMap<>();
+		Map<BigDecimal, List<Student>> result = new TreeMap<>(Collections.reverseOrder());
 
 		for (Map.Entry<Student, Map<String, BigDecimal>> entry : map.entrySet()) {
-			BigDecimal averageGrade = calculateAverageGrade(entry.getValue());
+			Student student = entry.getKey();
+			Map<String, BigDecimal> grades = entry.getValue();
 
-			List<Student> students = sortedStudents.get(averageGrade);
-			if (students == null) {
-				students = new ArrayList<>();
-				sortedStudents.put(averageGrade, students);
+			BigDecimal summ = BigDecimal.ZERO;
+			for (BigDecimal bigDecimal : grades.values()) {
+				summ = summ.add(bigDecimal);
 			}
-			students.add(entry.getKey());
+
+			BigDecimal average = summ.divide(BigDecimal.valueOf(grades.size()));
+
+			result.computeIfAbsent(average, new Function<BigDecimal, List<Student>>() {
+				@Override
+				public List<Student> apply(BigDecimal k) {
+					return new ArrayList<>();
+				}
+			}).add(student);
 		}
 
-		return sortedStudents;
-	}
-
-	private BigDecimal calculateAverageGrade(Map<String, BigDecimal> grades) {
-		BigDecimal total = BigDecimal.ZERO;
-		int count = 0;
-		for (BigDecimal grade : grades.values()) {
-			total = total.add(grade);
-			count++;
-		}
-		return total.divide(BigDecimal.valueOf(count), 1, BigDecimal.ROUND_HALF_UP);
+		return result;
 	}
 }
-
